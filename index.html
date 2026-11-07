@@ -111,6 +111,17 @@ body {
 			padding: 24px;
 		}
 		#rotate-hint .sub { opacity: 0.55; font-size: 14px; margin-top: 8px; }
+		#rotate-hint button {
+			margin-top: 24px;
+			padding: 14px 28px;
+			font-size: 16px;
+			font-weight: 600;
+			color: #14212b;
+			background: #f2a93b;
+			border: 0;
+			border-radius: 999px;
+			cursor: pointer;
+		}
 		@media (orientation: portrait) and (max-width: 1080px) {
 			#rotate-hint { display: flex; }
 		}
@@ -118,9 +129,21 @@ body {
 	</head>
 	<body>
 	<div id="rotate-hint">
-		请把手机横过来
-		<div class="sub">Spiral Drop 是横屏游戏</div>
+		Spiral Drop 是横屏游戏
+		<div class="sub">点下面的按钮，自动全屏并转成横屏</div>
+		<button id="rotate-go">全屏 + 横屏开始</button>
 	</div>
+	<script>
+	// 很多手机浏览器没有「手动横屏」开关，只能靠 Screen Orientation API：
+	// 但它要求页面先进入全屏，而全屏又必须由用户手势触发，所以只能放一个按钮。
+	document.getElementById('rotate-go').addEventListener('click', async () => {
+		try { await document.documentElement.requestFullscreen(); } catch (e) {}
+		try { await screen.orientation.lock('landscape'); } catch (e) {}
+		if (screen.orientation && screen.orientation.angle === 0 && window.innerWidth < window.innerHeight) {
+			document.querySelector('#rotate-hint .sub').textContent = '这台设备不支持自动旋转，请手动把手机横过来';
+		}
+	});
+	</script>
 
 
 		<canvas id="canvas">
