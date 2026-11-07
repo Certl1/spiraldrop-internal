@@ -111,13 +111,13 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":4865196,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":4865404,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
 (async function () {
 	// 先装 Service Worker：它会把 index.wasm 的请求换成拉 index.wasm.gz 再本地解压，
-	// 传输量 37.7MB -> 9.6MB。失败就照常直连原文件，不影响启动。
+	// 传输量 37.7MB -> 10MB。失败就照常直连原文件，不影响启动。
 	try {
 		if ('serviceWorker' in navigator) {
 			await navigator.serviceWorker.register('sw.js');
@@ -126,7 +126,6 @@ const engine = new Engine(GODOT_CONFIG);
 	} catch (err) {
 		console.warn('[sw] register failed, fallback to plain wasm:', err);
 	}
-
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
 	const statusNotice = document.getElementById('status-notice');

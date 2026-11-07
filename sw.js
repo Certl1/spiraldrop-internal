@@ -1,7 +1,7 @@
-// 让 GitHub Pages 也能「压缩传输」：浏览器请求 index.wasm 时，
-// 这里改成去拉 index.wasm.gz 并在本地解压，传输量从 37.7MB 降到 9.6MB。
-// 任何一步失败都回退到原始请求，不会把游戏搞挂。
+// Service Worker：GitHub Pages 不压缩 .wasm，这里改成拉 gzip 版并本地解压。
+// 传输量 37.7MB -> 10MB；任何一步失败都回退到原始请求，不会把游戏搞挂。
 const GZ_PATH = 'index.wasm.gz';
+const WASM_BYTES = 39514754;
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (event) => {
         status: 200,
         headers: {
           'Content-Type': 'application/wasm',
-          'Content-Length': String(39514754),
+          'Content-Length': String(WASM_BYTES),
         },
       });
     } catch (err) {
