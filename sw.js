@@ -38,7 +38,10 @@ self.addEventListener('fetch', (event) => {
       if (!res.ok || !res.body) {
         return fetch(event.request);
       }
-      const stream = res.body.pipeThrough(new DecompressionStream('gzip'));
+      // 一次性读完再解压：逐块 pipeThrough 在手机上吞吐很差（表现为进度条
+      // 走一小段就停、半天才动一下）。整块解压是纯内存操作，快得多。
+      const compressed = await res.arrayBuffer();
+      const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
       return new Response(stream, {
         status: 200,
         headers: {
