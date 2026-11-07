@@ -16,7 +16,25 @@ self.addEventListener('fetch', (event) => {
       if (typeof DecompressionStream === 'undefined') {
         return fetch(event.request);
       }
-      const res = await fetch(GZ_PATH, { cache: 'force-cache' });
+      // 用 Cache API 永久缓存 gz：GitHub Pages 的 HTTP 缓存只有 10 分钟，
+      // 过期后又要重下 37.7MB。这里命中一次就存住，以后直接从缓存读。
+      let res = null;
+      try {
+        const cache = await caches.open('spiraldrop-wasm-v1');
+        res = await cache.match(GZ_PATH);
+        if (!res) {
+          const fetched = await fetch(GZ_PATH);
+          if (fetched.ok) {
+            await cache.put(GZ_PATH, fetched.clone());
+            res = fetched;
+          }
+        }
+      } catch (e) {
+        res = null;
+      }
+      if (!res || !res.ok || !res.body) {
+        res = await fetch(GZ_PATH, { cache: 'force-cache' });
+      }
       if (!res.ok || !res.body) {
         return fetch(event.request);
       }
