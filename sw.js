@@ -23,13 +23,19 @@ self.addEventListener('fetch', (event) => {
         const cache = await caches.open('spiraldrop-wasm-v1');
         res = await cache.match(GZ_PATH);
         if (!res) {
-          const fetched = await fetch(GZ_PATH);
+          // 没有超时的话，网络差的环境下这个请求会永远挂着，
+          // 页面表现就是进度条卡在 0%、一直"加载不动"。
+          const fetched = await Promise.race([
+            fetch(GZ_PATH),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('gz fetch timeout')), 20000)),
+          ]);
           if (fetched.ok) {
-            await cache.put(GZ_PATH, fetched.clone());
+            cache.put(GZ_PATH, fetched.clone()).catch(() => {});
             res = fetched;
           }
         }
       } catch (e) {
+        console.warn('[sw] gz unavailable, falling back:', e);
         res = null;
       }
       if (!res || !res.ok || !res.body) {
