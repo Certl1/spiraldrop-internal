@@ -93,8 +93,36 @@ body {
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 <script src="mobile-perf.js"></script>
+			<style>
+		#rotate-hint {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: #14212b;
+			color: #fff;
+			font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+			font-size: 18px;
+			line-height: 1.7;
+			align-items: center;
+			justify-content: center;
+			flex-direction: column;
+			text-align: center;
+			z-index: 9999;
+			padding: 24px;
+		}
+		#rotate-hint .sub { opacity: 0.55; font-size: 14px; margin-top: 8px; }
+		@media (orientation: portrait) and (max-width: 1080px) {
+			#rotate-hint { display: flex; }
+		}
+		</style>
 	</head>
 	<body>
+	<div id="rotate-hint">
+		请把手机横过来
+		<div class="sub">Spiral Drop 是横屏游戏</div>
+	</div>
+
+
 		<canvas id="canvas">
 			Your browser does not support the canvas tag.
 		</canvas>
@@ -120,20 +148,23 @@ const engine = new Engine(GODOT_CONFIG);
 	// 传输量 37.7MB -> 10MB。失败就照常直连原文件，不影响启动。
 	try {
 		if ('serviceWorker' in navigator) {
-			await navigator.serviceWorker.register('sw.js');
-			await navigator.serviceWorker.ready;
-			// 首次访问时 SW 虽然已激活，但当前页面还没被它接管（controller 为空），
-			// 这时发出的 index.wasm 请求不会走 SW，等于没压缩。等 controllerchange。
-			if (!navigator.serviceWorker.controller) {
-				await new Promise((resolve) => {
-					navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
-					setTimeout(resolve, 2500);
-				});
-			}
-			console.log('[sw] controller:', navigator.serviceWorker.controller ? 'yes' : 'no');
+			// 手机上 SW 可能装不上（旧 Safari / 无痕模式 / 不支持 DecompressionStream），
+			// 所以整体加 3 秒超时：超时就照常直连原文件启动，绝不能卡在加载页。
+			const ready = (async () => {
+				await navigator.serviceWorker.register('sw.js');
+				await navigator.serviceWorker.ready;
+				if (!navigator.serviceWorker.controller) {
+					await new Promise((resolve) => {
+						navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+						setTimeout(resolve, 2000);
+					});
+				}
+				console.log('[sw] controller:', navigator.serviceWorker.controller ? 'yes' : 'no');
+			})();
+			await Promise.race([ready, new Promise((r) => setTimeout(r, 3000))]);
 		}
 	} catch (err) {
-		console.warn('[sw] register failed, fallback to plain wasm:', err);
+		console.warn('[sw] skipped, fallback to plain wasm:', err);
 	}
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
