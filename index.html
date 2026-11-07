@@ -122,6 +122,15 @@ const engine = new Engine(GODOT_CONFIG);
 		if ('serviceWorker' in navigator) {
 			await navigator.serviceWorker.register('sw.js');
 			await navigator.serviceWorker.ready;
+			// 首次访问时 SW 虽然已激活，但当前页面还没被它接管（controller 为空），
+			// 这时发出的 index.wasm 请求不会走 SW，等于没压缩。等 controllerchange。
+			if (!navigator.serviceWorker.controller) {
+				await new Promise((resolve) => {
+					navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+					setTimeout(resolve, 2500);
+				});
+			}
+			console.log('[sw] controller:', navigator.serviceWorker.controller ? 'yes' : 'no');
 		}
 	} catch (err) {
 		console.warn('[sw] register failed, fallback to plain wasm:', err);

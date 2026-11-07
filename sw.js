@@ -24,8 +24,9 @@ self.addEventListener('fetch', (event) => {
       return new Response(stream, {
         status: 200,
         headers: {
+          // 不要带 Content-Length：实际 body 是解压流，长度和 WASM_BYTES 一致但
+          // 浏览器可能据此等待过多数据；让运行时自己判断长度。
           'Content-Type': 'application/wasm',
-          'Content-Length': String(WASM_BYTES),
         },
       });
     } catch (err) {
